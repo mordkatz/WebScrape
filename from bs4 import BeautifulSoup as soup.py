@@ -1,41 +1,34 @@
-# Intro to Web Scraping with Python and Beautiful Soup by the Data Science Dojo
+from bs4 import BeautifulSoup as soup  # HTML data structure
+from urllib.request import urlopen as uReq  # Web client
 
-# To install beautiful soup open the command line and type pip install bs4
-
-from bs4 import BeautifulSoup as soup
-from urllib.request import urlopen as uReq
-
+# URl to web scrap from.
+# in this example we web scrap graphics cards from Newegg.com
 page_url = "http://www.newegg.com/Product/ProductList.aspx?Submit=ENE&N=-1&IsNodeId=1&Description=GTX&bop=And&Page=1&PageSize=36&order=BESTMATCH"
 
-# Openst up the connection grab the web page and download it
+# opens the connection and downloads html page from url
 uClient = uReq(page_url)
 
-# Read the web page
-page_htm = uClient.read()
-
-# Close the connection
+# parses html into a soup data structure to traverse html
+# as if it were a json data type.
+page_soup = soup(uClient.read(), "html.parser")
 uClient.close()
 
-# Does the html parsing
-page_soup = soup(page_htm, "html.parser")
-
-# Gets the containers for all the graphics cards
+# finds each product from the store page
 containers = page_soup.findAll("div", {"class": "item-container"})
 
-# Print how many container there are
-print(len(containers))
+# name the output file to write to local disk
+out_filename = "graphics_cards.csv"
+# header of csv file to be written
+headers = "brand,product_name,shipping \n"
 
-# To put all the data that we get into a csv file that we can open up with excel
-filename = "products.csv"
-f = open(filename, "w")
-# Make the headers for the csv file
-headers = "brand, product_name, shipping\n"
+# opens file, and writes headers
+f = open(out_filename, "w")
 f.write(headers)
 
-
-# Loop through all the containers
+# loops over each product and grabs attributes about
+# each product
 for container in containers:
-	 # Finds all link tags "a" from within the first div.
+    # Finds all link tags "a" from within the first div.
     make_rating_sp = container.div.select("a")
 
     # Grabs the title from the image title attribute
@@ -52,12 +45,13 @@ for container in containers:
     # Cleans the strip of "Shipping $" if it exists to just get number
     shipping = container.findAll("li", {"class": "price-ship"})[0].text.strip().replace("$", "").replace(" Shipping", "")
 
-    price =  container.find("li", {"class": "price-current"})
     # prints the dataset to console
     print("brand: " + brand + "\n")
     print("product_name: " + product_name + "\n")
     print("shipping: " + shipping + "\n")
-    print(price)
+
     # writes the dataset to file
     f.write(brand + ", " + product_name.replace(",", "|") + ", " + shipping + "\n")
-f.close
+
+f.close()  # Close the file
+
